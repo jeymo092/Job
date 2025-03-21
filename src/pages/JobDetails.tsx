@@ -16,18 +16,24 @@ import {
   ExternalLink
 } from "lucide-react";
 import { Job, jobsData } from "@/data/mockData";
+import { JobApiResult } from "@/services/jobsApi";
+import { toast } from "sonner";
 
 const JobDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const [job, setJob] = useState<Job | null>(null);
+  const [job, setJob] = useState<Job | JobApiResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Simulate API call
     const timeout = setTimeout(() => {
+      // Try to find the job from the mock data (this would be replaced by an API call in production)
       const foundJob = jobsData.find(j => j.id === id) || null;
       setJob(foundJob);
       setIsLoading(false);
+      
+      // Note: In a full implementation, we would fetch the specific job by ID 
+      // from the API here instead of using mock data
     }, 300);
 
     return () => clearTimeout(timeout);
@@ -61,6 +67,29 @@ const JobDetails = () => {
     }
   };
 
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: job?.title,
+        text: `Check out this job: ${job?.title} at ${job?.company}`,
+        url: window.location.href,
+      }).catch(() => {
+        // Fallback if sharing fails
+        toast.info("Job link copied to clipboard");
+        navigator.clipboard.writeText(window.location.href);
+      });
+    } else {
+      // Fallback for browsers that don't support sharing
+      toast.info("Job link copied to clipboard");
+      navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
+  const handleSave = () => {
+    toast.success("Job saved to your bookmarks");
+    // This would save the job to the user's bookmarks in a real application
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -90,6 +119,9 @@ const JobDetails = () => {
       </div>
     );
   }
+
+  // Check if the job has a source_url (from the API)
+  const hasSourceUrl = 'source_url' in job && job.source_url;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,10 +157,10 @@ const JobDetails = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" onClick={handleShare}>
                       <Share2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" onClick={handleSave}>
                       <Bookmark className="h-4 w-4" />
                     </Button>
                   </div>
@@ -161,7 +193,7 @@ const JobDetails = () => {
 
                 <div className="prose max-w-none">
                   <h2 className="text-xl font-semibold mb-4">Job Description</h2>
-                  <p className="mb-6">{job.description}</p>
+                  <p className="mb-6 whitespace-pre-line">{job.description}</p>
                   
                   <h2 className="text-xl font-semibold mb-4">Requirements</h2>
                   <ul className="space-y-2 list-disc pl-5">
@@ -177,7 +209,17 @@ const JobDetails = () => {
             <div className="space-y-6">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
                 <h2 className="text-lg font-semibold mb-6">Apply for this position</h2>
-                <Button className="w-full mb-4">Apply Now</Button>
+                
+                {hasSourceUrl ? (
+                  <Button className="w-full mb-4" asChild>
+                    <a href={(job as JobApiResult).source_url} target="_blank" rel="noopener noreferrer">
+                      Apply on Website
+                    </a>
+                  </Button>
+                ) : (
+                  <Button className="w-full mb-4">Apply Now</Button>
+                )}
+                
                 <p className="text-sm text-gray-600 mb-6">
                   This job was posted on {formatDate(job.postedDate)}. Applications will be accepted until the position is filled.
                 </p>
@@ -191,15 +233,18 @@ const JobDetails = () => {
                     <Building className="mr-2 h-4 w-4" />
                     View Company Profile
                   </Link>
-                  <a 
-                    href="#" 
-                    className="flex items-center text-primary hover:underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Visit Company Website
-                  </a>
+                  
+                  {hasSourceUrl && (
+                    <a 
+                      href={(job as JobApiResult).source_url} 
+                      className="flex items-center text-primary hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Visit Original Job Posting
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
