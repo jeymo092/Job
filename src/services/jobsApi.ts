@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { jobsData } from '@/data/mockData';
 
@@ -45,9 +46,10 @@ export interface JobApiResult {
 const apiClient = axios.create({
   baseURL: 'https://active-jobs-db.p.rapidapi.com',
   headers: {
-    'x-rapidapi-key': 'dc3a2f3260msh0a744cd1233f1a2p1def2ejsn248c50c8febb',
+    'x-rapidapi-key': '4c523525f9msh77dd3f353ec1b93p142e2djsn6e1dce0a360e',
     'x-rapidapi-host': 'active-jobs-db.p.rapidapi.com'
-  }
+  },
+  timeout: 5000 // Add timeout to prevent long loading times
 });
 
 // Helper function to determine job type from description and title

@@ -5,12 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Building, MapPin, Clock } from "lucide-react";
 import { Job } from "@/data/mockData";
 import { JobApiResult } from "@/services/jobsApi";
+import { useState } from "react";
 
 interface JobCardProps {
   job: Job | JobApiResult;
 }
 
 const JobCard = ({ job }: JobCardProps) => {
+  const [imageLoaded, setImageLoaded] = useState(true);
+
   // Calculate time ago
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -59,27 +62,32 @@ const JobCard = ({ job }: JobCardProps) => {
     }
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setImageLoaded(false);
+    (e.target as HTMLImageElement).src = '/placeholder.svg';
+  };
+
   return (
     <Card className="card-hover overflow-hidden border border-gray-200">
       <CardContent className="p-0">
-        <Link to={`/jobs/${job.id}`} className="block p-6">
+        <div className="p-6">
           <div className="flex items-start gap-4">
             <div className="h-12 w-12 rounded bg-gray-100 flex items-center justify-center overflow-hidden">
               <img 
-                src={job.logo} 
+                src={imageLoaded ? job.logo : '/placeholder.svg'} 
                 alt={`${job.company} logo`} 
                 className="object-cover w-full h-full"
-                onError={(e) => {
-                  // If image fails to load, set fallback placeholder
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
+                onError={handleImageError}
+                loading="lazy"
               />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap justify-between gap-2">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">
-                  {job.title}
-                </h3>
+                <Link to={`/jobs/${job.id}`} className="hover:underline">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">
+                    {job.title}
+                  </h3>
+                </Link>
                 <div className="flex items-center">
                   <Badge variant="outline" className={`${getTypeColor(job.type)}`}>
                     {job.type}
@@ -115,7 +123,7 @@ const JobCard = ({ job }: JobCardProps) => {
               </div>
             </div>
           </div>
-        </Link>
+        </div>
       </CardContent>
     </Card>
   );
