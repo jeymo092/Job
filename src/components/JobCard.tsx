@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Building, MapPin, Clock } from "lucide-react";
 import { Job } from "@/data/mockData";
+import { JobApiResult } from "@/services/jobsApi";
 
 interface JobCardProps {
-  job: Job;
+  job: Job | JobApiResult;
 }
 
 const JobCard = ({ job }: JobCardProps) => {
@@ -45,6 +46,16 @@ const JobCard = ({ job }: JobCardProps) => {
         return "bg-rose-100 text-rose-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Get date to display - might be postedDate or postedAt depending on the type
+  const getDisplayDate = () => {
+    if ('postedDate' in job) {
+      return getTimeAgo(job.postedDate);
+    } else {
+      // This should never happen, but TypeScript wants us to handle it
+      return "Recently";
     }
   };
 
@@ -87,7 +98,7 @@ const JobCard = ({ job }: JobCardProps) => {
                 
                 <div className="flex items-center text-sm text-gray-500">
                   <Clock className="mr-1.5 h-4 w-4 flex-shrink-0 text-gray-400" />
-                  {getTimeAgo(job.postedDate)}
+                  {getDisplayDate()}
                 </div>
               </div>
               

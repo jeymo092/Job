@@ -35,7 +35,7 @@ export interface JobApiResult {
   description: string;
   salary: string;
   postedDate: string;
-  type: string; // We'll need to infer this
+  type: "Full-time" | "Part-time" | "Contract" | "Remote" | "Freelance"; // Align with Job type
   logo: string;
   requirements: string[];
   source_url: string;
@@ -51,20 +51,20 @@ const apiClient = axios.create({
 });
 
 // Helper function to determine job type from description and title
-const inferJobType = (title: string, description: string): string => {
+const inferJobType = (title: string, description: string): "Full-time" | "Part-time" | "Contract" | "Remote" | "Freelance" => {
   const titleLower = title.toLowerCase();
   const descLower = description.toLowerCase();
   
   if (titleLower.includes('remote') || descLower.includes('remote work') || descLower.includes('work from home')) {
-    return 'Remote';
+    return "Remote";
   } else if (titleLower.includes('contract') || descLower.includes('contract')) {
-    return 'Contract';
+    return "Contract";
   } else if (titleLower.includes('part-time') || descLower.includes('part time') || descLower.includes('part-time')) {
-    return 'Part-time';
+    return "Part-time";
   } else if (titleLower.includes('freelance') || descLower.includes('freelance')) {
-    return 'Freelance';
+    return "Freelance";
   } else {
-    return 'Full-time'; // Default
+    return "Full-time"; // Default
   }
 };
 

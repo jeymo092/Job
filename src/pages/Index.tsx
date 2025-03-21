@@ -31,8 +31,10 @@ const Index = () => {
       0
     ),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    onError: () => {
-      toast.error("Failed to load jobs. Please try again.");
+    meta: {
+      onError: () => {
+        toast.error("Failed to load jobs. Please try again.");
+      }
     }
   });
 
