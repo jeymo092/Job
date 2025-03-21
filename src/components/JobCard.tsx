@@ -69,6 +69,10 @@ const JobCard = ({ job }: JobCardProps) => {
                 src={job.logo} 
                 alt={`${job.company} logo`} 
                 className="object-cover w-full h-full"
+                onError={(e) => {
+                  // If image fails to load, set fallback placeholder
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
             </div>
             <div className="flex-1 min-w-0">

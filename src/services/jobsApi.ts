@@ -1,5 +1,5 @@
-
 import axios from 'axios';
+import { jobsData } from '@/data/mockData';
 
 // API types
 export interface RapidApiJob {
@@ -35,7 +35,7 @@ export interface JobApiResult {
   description: string;
   salary: string;
   postedDate: string;
-  type: "Full-time" | "Part-time" | "Contract" | "Remote" | "Freelance"; // Align with Job type
+  type: "Full-time" | "Part-time" | "Contract" | "Remote" | "Freelance";
   logo: string;
   requirements: string[];
   source_url: string;
@@ -64,16 +64,14 @@ const inferJobType = (title: string, description: string): "Full-time" | "Part-t
   } else if (titleLower.includes('freelance') || descLower.includes('freelance')) {
     return "Freelance";
   } else {
-    return "Full-time"; // Default
+    return "Full-time";
   }
 };
 
 // Helper function to extract requirements from description
 const extractRequirements = (description: string): string[] => {
-  // Simple extraction - look for paragraphs that might be requirements
   const lines = description.split('\n').filter(line => line.trim().length > 0);
   
-  // Filter for lines that might be requirements
   const requirementKeywords = ['require', 'qualification', 'skill', 'experience', 'proficien', 'familiar', 'knowledge'];
   
   const requirements = lines.filter(line => {
@@ -81,7 +79,6 @@ const extractRequirements = (description: string): string[] => {
     return requirementKeywords.some(keyword => lineLower.includes(keyword));
   });
   
-  // If we couldn't find any, return some generic ones
   if (requirements.length < 2) {
     return [
       "Relevant experience in the field",
@@ -91,7 +88,7 @@ const extractRequirements = (description: string): string[] => {
     ];
   }
   
-  return requirements.slice(0, 8); // Limit to 8 requirements
+  return requirements.slice(0, 8);
 };
 
 // Transform API job to our app's job format
@@ -112,6 +109,31 @@ const transformJobData = (job: RapidApiJob): JobApiResult => {
   };
 };
 
+// Convert mock data to JobApiResult format for fallback
+const convertMockToApiFormat = (limit = 20, offset = 0, titleFilter = '', locationFilter = ''): JobApiResult[] => {
+  return jobsData
+    .filter(job => {
+      const matchTitle = !titleFilter || job.title.toLowerCase().includes(titleFilter.toLowerCase());
+      const matchLocation = !locationFilter || job.location.toLowerCase().includes(locationFilter.toLowerCase());
+      return matchTitle && matchLocation;
+    })
+    .slice(offset, offset + limit)
+    .map(job => ({
+      id: job.id,
+      title: job.title,
+      company: job.company,
+      companyId: job.companyId,
+      location: job.location,
+      description: job.description,
+      salary: job.salary,
+      postedDate: job.postedDate,
+      type: job.type,
+      logo: job.logo,
+      requirements: job.requirements,
+      source_url: '#'
+    }));
+};
+
 // API Endpoints
 export const fetchJobs = async (
   period: '7d' | '24h' | '1h' = '7d',
@@ -121,10 +143,8 @@ export const fetchJobs = async (
   offset: number = 0
 ): Promise<JobApiResult[]> => {
   try {
-    // Construct the path based on the period
     const path = `/active-ats-${period}`;
     
-    // Construct query parameters
     const params: Record<string, string> = {
       limit: limit.toString(),
       offset: offset.toString(),
@@ -141,11 +161,12 @@ export const fetchJobs = async (
     
     const response = await apiClient.get<RapidApiResponse>(path, { params });
     
-    // Transform the data to match our application's job format
     return response.data.results.map(transformJobData);
   } catch (error) {
     console.error('Error fetching jobs:', error);
-    throw error;
+    
+    console.log('Using mock data as fallback');
+    return convertMockToApiFormat(limit, offset, titleFilter, locationFilter);
   }
 };
 
@@ -155,6 +176,10 @@ export const fetchExpiredJobs = async (): Promise<JobApiResult[]> => {
     return response.data.results.map(transformJobData);
   } catch (error) {
     console.error('Error fetching expired jobs:', error);
-    throw error;
+    
+    return convertMockToApiFormat(5, 0).map(job => ({
+      ...job,
+      postedDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+    }));
   }
 };
