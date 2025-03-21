@@ -163,6 +163,12 @@ export const fetchJobs = async (
     
     const response = await apiClient.get<RapidApiResponse>(path, { params });
     
+    // Check if response.data and response.data.results exist before mapping
+    if (!response.data || !response.data.results) {
+      console.log('API returned invalid data structure, using mock data instead');
+      return convertMockToApiFormat(limit, offset, titleFilter, locationFilter);
+    }
+    
     return response.data.results.map(transformJobData);
   } catch (error) {
     console.error('Error fetching jobs:', error);

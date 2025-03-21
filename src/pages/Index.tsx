@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Company, companiesData } from "@/data/mockData";
 import { JobApiResult, fetchJobs } from "@/services/jobsApi";
 import { toast } from "sonner";
+import { SearchX } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("jobs");
@@ -21,7 +23,7 @@ const Index = () => {
   const [period, setPeriod] = useState<'7d' | '24h' | '1h'>('7d');
 
   // Fetch jobs using React Query
-  const { data: jobs, isLoading, isError } = useQuery({
+  const { data: jobs, isLoading, isError, refetch } = useQuery({
     queryKey: ['jobs', period, searchFilters.query, searchFilters.location],
     queryFn: () => fetchJobs(
       period,
@@ -75,6 +77,44 @@ const Index = () => {
     setPeriod(newPeriod);
     toast.info(`Showing jobs from the last ${newPeriod === '7d' ? '7 days' : newPeriod === '24h' ? '24 hours' : 'hour'}`);
   };
+
+  // Empty state component for no jobs found
+  const NoJobsFound = () => (
+    <div className="text-center py-16">
+      <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <SearchX className="h-8 w-8 text-gray-400" />
+      </div>
+      <h3 className="text-xl font-medium text-gray-900 mb-2">No jobs found</h3>
+      <p className="text-gray-500 mb-6 max-w-md mx-auto">
+        We couldn't find any jobs matching your criteria. Try adjusting your search filters or check back later.
+      </p>
+      
+      {(searchFilters.query || searchFilters.location || searchFilters.jobType) && (
+        <Button variant="outline" className="mr-2" onClick={() => {
+          handleSearch({ query: "", location: "", jobType: "" });
+        }}>
+          Clear Filters
+        </Button>
+      )}
+      
+      <Button onClick={() => refetch()}>Try Again</Button>
+    </div>
+  );
+
+  // Error state component
+  const ErrorState = () => (
+    <div className="w-full max-w-3xl mx-auto">
+      <Alert variant="destructive" className="mb-6">
+        <AlertTitle>Error loading jobs</AlertTitle>
+        <AlertDescription>
+          There was a problem loading job listings. This could be due to network issues or API limitations.
+        </AlertDescription>
+      </Alert>
+      <div className="text-center py-6">
+        <Button onClick={() => refetch()}>Try Again</Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -130,11 +170,7 @@ const Index = () => {
                 ))}
               </div>
             ) : isError ? (
-              <div className="text-center py-16">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load jobs</h3>
-                <p className="text-gray-500 mb-4">There was an error loading the job listings.</p>
-                <Button onClick={() => window.location.reload()}>Try Again</Button>
-              </div>
+              <ErrorState />
             ) : (
               <>
                 <div className="flex flex-wrap justify-between items-center gap-4">
@@ -173,10 +209,7 @@ const Index = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-16">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
-                    <p className="text-gray-500">Try adjusting your search filters</p>
-                  </div>
+                  <NoJobsFound />
                 )}
               </>
             )}
